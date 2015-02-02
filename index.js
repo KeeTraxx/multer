@@ -40,7 +40,7 @@ module.exports = function(options) {
     req.files = req.files || {};
 
     if (is(req, ['multipart'])) {
-      if (options.onParseStart) { options.onParseStart(); }
+      if (options.onParseStart) { options.onParseStart(req); }
 
       // add the request headers to the options
       options.headers = req.headers;
@@ -80,7 +80,7 @@ module.exports = function(options) {
         if (filename.indexOf('.') > 0) { ext = '.' + filename.split('.').slice(-1)[0]; }
         else { ext = ''; }
 
-        newFilename = rename(fieldname, filename.replace(ext, '')) + ext;
+        newFilename = rename(fieldname, filename.replace(ext, ''), req) + ext;
         newFilePath = path.join(dest, newFilename);
 
         var file = {
@@ -98,7 +98,7 @@ module.exports = function(options) {
 
         // trigger "file upload start" event
         if (options.onFileUploadStart) {
-          var proceed = options.onFileUploadStart(file);
+          var proceed = options.onFileUploadStart(file, req);
           // if the onFileUploadStart handler returned null, it means we should proceed further, discard the file!
           if (proceed == false) {
             fileCount--;
@@ -120,7 +120,7 @@ module.exports = function(options) {
             file.size += data.length; 
           }
           // trigger "file data" event
-          if (options.onFileUploadData) { options.onFileUploadData(file, data); }
+          if (options.onFileUploadData) { options.onFileUploadData(file, data, req); }
         });
 
         function onFileStreamEnd() {
@@ -130,7 +130,7 @@ module.exports = function(options) {
           req.files[fieldname].push(file);
 
           // trigger "file end" event
-          if (options.onFileUploadComplete) { options.onFileUploadComplete(file); }
+          if (options.onFileUploadComplete) { options.onFileUploadComplete(file, req); }
 
           // defines has completed processing one more file
           fileCount--;
@@ -149,7 +149,7 @@ module.exports = function(options) {
         });
 
         fileStream.on('limit', function () {
-          if (options.onFileSizeLimit) { options.onFileSizeLimit(file); }
+          if (options.onFileSizeLimit) { options.onFileSizeLimit(file,req); }
         });
 
         function onFileStreamError(error) {
@@ -166,15 +166,15 @@ module.exports = function(options) {
       });
 
       busboy.on('partsLimit', function() {
-        if (options.onPartsLimit) { options.onPartsLimit(); }
+        if (options.onPartsLimit) { options.onPartsLimit(req); }
       });
 
       busboy.on('filesLimit', function() {
-        if (options.onFilesLimit) { options.onFilesLimit(); }
+        if (options.onFilesLimit) { options.onFilesLimit(req); }
       });
 
       busboy.on('fieldsLimit', function() {
-        if (options.onFieldsLimit) { options.onFieldsLimit(); }
+        if (options.onFieldsLimit) { options.onFieldsLimit(req); }
       });
 
       busboy.on('finish', function() {
